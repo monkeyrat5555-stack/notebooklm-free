@@ -245,25 +245,10 @@ router.get('/stats/:id', (req, res) => {
 // Helper function to get relevant documents
 async function getRelevantDocuments(query) {
   try {
-    // This would integrate with the documents API
-    // For now, return mock documents
-    return [
-      {
-        id: 'doc1',
-        title: 'Sample Document.pdf',
-        type: 'pdf',
-        content: 'This is sample content for testing the system.',
-        pageNumber: 1
-      },
-      {
-        id: 'doc2',
-        title: 'Sample YouTube Video',
-        type: 'youtube',
-        content: 'This is sample transcript content.',
-        timestamp: '2:30',
-        url: 'https://youtube.com/watch?v=sample'
-      }
-    ]
+    // In production, this would use vector search to find relevant documents
+    // For now, return empty array so AI doesn't use sample content
+    // The AI will respond with "Please upload documents first" message
+    return []
   } catch (error) {
     console.error('Error getting relevant documents:', error)
     return []
