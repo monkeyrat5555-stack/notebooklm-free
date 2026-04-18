@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, MessageSquare, User, Bot, Trash2 } from 'lucide-react'
+import { Send, User, Bot, Trash2, FileText } from 'lucide-react'
 
 export default function Chat() {
   const [messages, setMessages] = useState([])
@@ -17,17 +17,19 @@ export default function Chat() {
     }
 
     setMessages(prev => [...prev, userMessage])
+    const currentInput = input
     setInput('')
     setIsLoading(true)
 
     try {
+      // Call the real API
       const response = await fetch('https://notebooklm-free-2026-test69.vercel.app/api/chat/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: input,
+          message: currentInput,
           conversationId: 'default'
         })
       })
@@ -40,7 +42,7 @@ export default function Chat() {
           type: 'bot',
           content: data.response.content,
           timestamp: new Date().toISOString(),
-          sources: data.sources || []
+          sources: data.response.sources || []
         }
 
         setMessages(prev => [...prev, botMessage])
@@ -88,12 +90,20 @@ export default function Chat() {
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-800">AI Chat</h1>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">AI Chat</h1>
+                <p className="text-sm text-slate-500">Ask questions about your documents</p>
+              </div>
+            </div>
             <button
               onClick={clearChat}
-              className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+              className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors flex items-center space-x-2"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4" />
               <span>Clear</span>
             </button>
           </div>
@@ -103,14 +113,16 @@ export default function Chat() {
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="bg-white rounded-2xl shadow-lg border border-slate-200/50">
-            <div className="h-96 flex flex-col">
+            <div className="flex flex-col" style={{ height: '600px' }}>
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 ? (
                   <div className="text-center text-slate-500 py-12">
-                    <Bot className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-slate-700">Start a conversation</p>
-                    <p className="text-sm text-slate-500">
-                      Upload your documents and ask questions about them. The AI will analyze your content and provide detailed responses with citations.
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-700 mb-2">Start a conversation</h3>
+                    <p className="text-sm text-slate-500 max-w-md mx-auto">
+                      Upload your documents first, then ask questions about them. The AI will analyze your content and provide detailed responses with citations.
                     </p>
                   </div>
                 ) : (
@@ -128,9 +140,9 @@ export default function Chat() {
                       } rounded-2xl px-4 py-3`}
                       >
                         {message.type === 'user' ? (
-                          <User className="w-6 h-6 text-blue-100" />
+                          <User className="w-6 h-6 text-blue-100 mt-1" />
                         ) : (
-                          <Bot className="w-6 h-6 text-slate-300" />
+                          <Bot className="w-6 h-6 text-slate-300 mt-1" />
                         )}
                         <div>
                           <p className="text-sm whitespace-pre-wrap break-words">
@@ -140,6 +152,18 @@ export default function Chat() {
                       </div>
                     </div>
                   ))
+                )}
+                {isLoading && (
+                  <div className="flex justify-start mb-4">
+                    <div className="flex items-start space-x-2 max-w-xs lg:max-w-md bg-slate-100 text-slate-800 rounded-2xl px-4 py-3">
+                      <Bot className="w-6 h-6 text-slate-300 mt-1" />
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -155,7 +179,9 @@ export default function Chat() {
                           <p className="text-slate-500">
                             {source.type === 'pdf' 
                               ? `Page ${source.page}` 
-                              : `${source.timestamp}`
+                              : source.timestamp
+                              ? `${source.timestamp}`
+                              : 'Document'
                             }
                           </p>
                         </div>
