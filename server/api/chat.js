@@ -28,40 +28,46 @@ router.post('/message', async (req, res) => {
     }
     chatHistory.push(userMessage)
 
-    // TODO: Implement actual AI processing pipeline
-    // This is where the multi-model writing pipeline will work:
-    // 1. Planner model analyzes the question
-    // 2. Researcher finds relevant documents
-    // 3. Writer creates response
-    // 4. Editor refines the content
-    // 5. Citation verifier adds proper citations
-
-    // Simulate AI response for now
-    setTimeout(() => {
-      const aiResponse = {
+    // Real AI processing
+    try {
+      // Import AI services
+      const MultiProviderAI = require('../services/multiProviderAI')
+      const aiService = new MultiProviderAI()
+      
+      // Get documents from storage (in production, this would come from your database)
+      const documents = [] // This would be populated with user's uploaded documents
+      
+      // Generate AI response using real AI providers
+      const aiResponse = await aiService.generateResponse(message, documents)
+      
+      const botMessage = {
         id: Date.now() + 1,
         type: 'bot',
-        content: `I understand you're asking about: "${message}"\n\nThis is a simulated response. In the actual implementation, I would:\n\n1. **Analyze your question** using a planner model from OpenRouter\n2. **Search through your documents** using vector embeddings from HuggingFace\n3. **Retrieve relevant information** from your PDFs and YouTube transcripts\n4. **Generate a comprehensive response** using Groq for fast inference\n5. **Add proper citations** linking to the exact sources\n\nThe response would include detailed analysis, specific quotes from your documents, and proper citations like [1], [2], etc. showing exactly where each piece of information came from.`,
-        citations: [
-          {
-            id: 1,
-            title: 'Sample Document.pdf',
-            page: 3,
-            text: 'This is where the relevant quote from your document would appear...',
-            url: null
-          }
-        ],
+        content: aiResponse.content,
+        sources: aiResponse.sources || [],
         timestamp: new Date().toISOString(),
         conversationId: conversationId || 'default'
       }
-      chatHistory.push(aiResponse)
-    }, 1000)
-
-    res.json({
-      success: true,
-      message: 'Message received and processing',
-      userMessage: userMessage
-    })
+      
+      chatHistory.push(botMessage)
+      res.json({ success: true, response: botMessage })
+      
+    } catch (error) {
+      console.error('AI Processing Error:', error)
+      
+      // Fallback response
+      const fallbackResponse = {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: 'I apologize, but I encountered an error processing your request. Please try again or upload some documents first.',
+        sources: [],
+        timestamp: new Date().toISOString(),
+        conversationId: conversationId || 'default'
+      }
+      
+      chatHistory.push(fallbackResponse)
+      res.json({ success: true, response: fallbackResponse })
+    }
 
   } catch (error) {
     console.error('Error processing chat message:', error)
@@ -77,9 +83,16 @@ router.delete('/history', (req, res) => {
 
 // Get conversation by ID
 router.get('/conversation/:id', (req, res) => {
-  const conversationId = req.params.id
-  const messages = chatHistory.filter(msg => msg.conversationId === conversationId)
-  res.json({ messages })
+  const { id } = req.params
+  const conversation = chatHistory.filter(msg => msg.conversationId === id)
+  res.json({ success: true, conversation })
+})
+
+// Delete conversation
+router.delete('/conversation/:id', (req, res) => {
+  const { id } = req.params
+  chatHistory = chatHistory.filter(msg => msg.conversationId !== id)
+  res.json({ success: true, message: 'Conversation deleted' })
 })
 
 module.exports = router
