@@ -31,155 +31,185 @@ const Documents = () => {
   ])
 
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [youtubeUrl, setYoutubeUrl] = useState('')
+  }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'processed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case 'processing':
-        return <Clock className="w-5 h-5 text-yellow-500" />
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-500" />
-      default:
-        return null
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+    // Handle file drop
+  }
+
+  const handleFileUpload = (e) => {
+    const files = e.target.files
+    // Handle file upload
+  }
+
+  const handleYouTubeUrl = () => {
+    const url = prompt('Enter YouTube URL:')
+    if (url) {
+      // Handle YouTube URL
     }
   }
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-      // TODO: Implement file upload logic
-      console.log('Uploading file:', file.name)
-    }
-  }
+  const filteredDocuments = documents.filter(doc =>
+    doc.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
-  const handleYoutubeSubmit = () => {
-    if (youtubeUrl) {
-      // TODO: Implement YouTube URL processing
-      console.log('Processing YouTube URL:', youtubeUrl)
-      setYoutubeUrl('')
-      setShowUploadModal(false)
-    }
-  }
-
-  const deleteDocument = (id) => {
+  const handleDelete = (id) => {
     setDocuments(documents.filter(doc => doc.id !== id))
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your PDFs and YouTube videos
-          </p>
-        </div>
-        <button 
-          onClick={() => setShowUploadModal(true)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add Source</span>
-        </button>
-      </div>
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-slate-800">My Documents</h1>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search documents..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                />
+              </div>
+              
+              <button
+                onClick={handleFileUpload}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Add Source</span>
+              </button>
+            </div>
+          </div>
+        </header>
 
-      {/* Documents List */}
-      <div className="space-y-4">
-        {documents.map((doc) => (
-          <div key={doc.id} className="card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gray-100 rounded-lg">
-                  {doc.type === 'pdf' ? (
-                    <FileText className="w-6 h-6 text-gray-600" />
-                  ) : (
-                    <Youtube className="w-6 h-6 text-red-600" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{doc.name}</h3>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                    <span>{doc.size}</span>
-                    <span>•</span>
-                    <span>Added {doc.addedAt}</span>
-                    <span>•</span>
-                    <div className="flex items-center space-x-1">
-                      {getStatusIcon(doc.status)}
-                      <span className="capitalize">{doc.status}</span>
+      {/* Main Content */}
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Upload Area */}
+          <div 
+            className={`mb-8 border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
+              isDragging ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-white'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          />
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-4">
+                <Upload className="w-8 h-8 text-blue-600" />
+              </div>
+              
+              <h2 className="text-xl font-semibold text-slate-800 mb-2">
+                Add Your Documents
+              </h2>
+              
+              <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                Upload PDF files or add YouTube videos to start analyzing.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <label className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2 cursor-pointer">
+                  <Upload className="w-5 h-5" />
+                  <span>Choose Files</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+                
+                <button
+                  onClick={handleYouTubeUrl}
+                  className="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center space-x-2"
+                >
+                  <FileVideo className="w-5 h-5" />
+                  <span>YouTube URL</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents List */}
+          {filteredDocuments.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileVideo className="w-12 h-12 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-800 mb-2">No documents yet</h3>
+              <p className="text-slate-600 max-w-md mx-auto">
+                Upload your first PDF or add a YouTube video to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredDocuments.map(doc => (
+                <div key={doc.id} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/50 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        doc.type === 'pdf' ? 'bg-red-100' : 'bg-blue-100'
+                      }`}>
+                        {doc.type === 'pdf' ? (
+                          <Upload className="w-5 h-5 text-red-600" />
+                        ) : (
+                          <FileVideo className="w-5 h-5 text-blue-600" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-800">{doc.name}</h3>
+                        <p className="text-sm text-slate-500">{doc.type}</p>
+                      </div>
                     </div>
+                    
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="text-sm text-slate-600">
+                    {doc.type === 'pdf' ? (
+                      <p>PDF Document • {doc.pages} pages • {doc.size}</p>
+                    ) : (
+                      <p>YouTube Video • {doc.duration}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      doc.status === 'processed' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {doc.status}
+                    </span>
+                    <span className="text-xs text-slate-500">{doc.addedAt}</span>
                   </div>
                 </div>
-              </div>
-              <button
-                onClick={() => deleteDocument(doc.id)}
-                className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              ))}
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Add Source</h2>
-            
-            <div className="space-y-4">
-              {/* PDF Upload */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors cursor-pointer">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="pdf-upload"
-                />
-                <label htmlFor="pdf-upload" className="cursor-pointer">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600">Click to upload PDF</p>
-                  <p className="text-sm text-gray-400 mt-1">Maximum 10MB</p>
-                </label>
-              </div>
-
-              {/* YouTube URL */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  YouTube URL
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="url"
-                    value={youtubeUrl}
-                    onChange={(e) => setYoutubeUrl(e.target.value)}
-                    placeholder="https://youtube.com/watch?v=..."
-                    className="input-field"
-                  />
-                  <button
-                    onClick={handleYoutubeSubmit}
-                    disabled={!youtubeUrl}
-                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
         </div>
       )}
     </div>

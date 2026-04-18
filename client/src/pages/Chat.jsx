@@ -1,42 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { 
-  Send, 
-  Bot, 
-  User, 
-  FileText,
-  Quote,
-  Loader2
-} from 'lucide-react'
+import { useState } from 'react'
+import { Send, MessageSquare, User, Bot, Trash2 } from 'lucide-react'
 
-const Chat = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      content: 'Hello! I\'m your AI research assistant. I can help you analyze your documents and answer questions. What would you like to know?',
-      citations: []
-    }
-  ])
+export default function Chat() {
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const handleSendMessage = async () => {
+  const handleSend = async () => {
     if (!input.trim()) return
 
     const userMessage = {
       id: Date.now(),
       type: 'user',
       content: input,
-      citations: []
+      timestamp: new Date().toISOString()
     }
 
     setMessages(prev => [...prev, userMessage])
@@ -44,23 +21,53 @@ const Chat = () => {
     setIsLoading(true)
 
     try {
-      // TODO: Implement actual API call to backend
-      // Simulate API response
-      setTimeout(() => {
-        const botResponse = {
+      const response = await fetch('https://notebooklm-free-2026-test69.vercel.app/api/chat/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: input,
+          conversationId: 'default'
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        const botMessage = {
           id: Date.now() + 1,
           type: 'bot',
-          content: `Based on your documents, here's what I found about "${input}":\n\nThis is a simulated response. In the actual implementation, this would connect to our AI backend that processes your documents using free AI providers like OpenRouter, Groq, and HuggingFace.\n\nThe response would include:\n- Detailed analysis of your question\n- Relevant information from your uploaded documents\n- Proper citations like [1], [2] etc.\n- Links to the specific sources`,
-          citations: [
-            { id: 1, title: 'Research Paper.pdf', page: 3, text: 'Relevant excerpt from the document...' },
-            { id: 2, title: 'YouTube: Introduction to AI', timestamp: '5:23', text: 'Relevant transcript segment...' }
-          ]
+          content: data.response.content,
+          timestamp: new Date().toISOString(),
+          sources: data.sources || []
         }
-        setMessages(prev => [...prev, botResponse])
-        setIsLoading(false)
-      }, 1500)
+
+        setMessages(prev => [...prev, botMessage])
+      } else {
+        const errorMessage = data.error || 'Failed to process your message'
+        const botMessage = {
+          id: Date.now() + 1,
+          type: 'bot',
+          content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+          timestamp: new Date().toISOString(),
+          sources: []
+        }
+
+        setMessages(prev => [...prev, botMessage])
+      }
     } catch (error) {
-      console.error('Error sending message:', error)
+      console.error('Network Error:', error)
+      const botMessage = {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: 'Sorry, I encountered a network error. Please check your connection and try again.',
+        timestamp: new Date().toISOString(),
+        sources: []
+      }
+
+      setMessages(prev => [...prev, botMessage])
+    } finally {
       setIsLoading(false)
     }
   }
@@ -68,121 +75,123 @@ const Chat = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSendMessage()
+      handleSend()
     }
   }
 
-  return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col">
-      {/* Chat Header */}
-      <div className="bg-white border-b border-gray-200 p-4 rounded-t-xl">
-        <h1 className="text-2xl font-bold text-gray-900">AI Research Assistant</h1>
-        <p className="text-gray-600 mt-1">
-          Ask questions about your uploaded documents and YouTube videos
-        </p>
-      </div>
+  const clearChat = () => {
+    setMessages([])
+  }
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div className={`max-w-3xl ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
-              <div className="flex items-start space-x-3">
-                {message.type === 'bot' && (
-                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-5 h-5 text-white" />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-slate-800">AI Chat</h1>
+            <button
+              onClick={clearChat}
+              className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-5 h-5" />
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200/50">
+            <div className="h-96 flex flex-col">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="text-center text-slate-500 py-12">
+                    <Bot className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-slate-700">Start a conversation</p>
+                    <p className="text-sm text-slate-500">
+                      Upload your documents and ask questions about them. The AI will analyze your content and provide detailed responses with citations.
+                    </p>
                   </div>
-                )}
-                <div
-                  className={`px-4 py-3 rounded-lg ${
-                    message.type === 'user'
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-white border border-gray-200'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  
-                  {/* Citations */}
-                  {message.citations && message.citations.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Quote className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Sources</span>
-                      </div>
-                      <div className="space-y-2">
-                        {message.citations.map((citation) => (
-                          <div key={citation.id} className="flex items-start space-x-2 text-sm">
-                            <span className="text-primary-600 font-medium">[{citation.id}]</span>
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                <FileText className="w-3 h-3 text-gray-400" />
-                                <span className="font-medium text-gray-700">{citation.title}</span>
-                                {citation.page && (
-                                  <span className="text-gray-500">• Page {citation.page}</span>
-                                )}
-                                {citation.timestamp && (
-                                  <span className="text-gray-500">• {citation.timestamp}</span>
-                                )}
-                              </div>
-                              <p className="text-gray-600 mt-1 italic">"{citation.text}"</p>
-                            </div>
-                          </div>
-                        ))}
+                ) : (
+                  messages.map(message => (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        message.type === 'user' ? 'justify-end' : 'justify-start'
+                      } mb-4`}
+                    >
+                      <div className={`flex items-start space-x-2 max-w-xs lg:max-w-md ${
+                        message.type === 'user' 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-slate-100 text-slate-800'
+                      } rounded-2xl px-4 py-3`}
+                      >
+                        {message.type === 'user' ? (
+                          <User className="w-6 h-6 text-blue-100" />
+                        ) : (
+                          <Bot className="w-6 h-6 text-slate-300" />
+                        )}
+                        <div>
+                          <p className="text-sm whitespace-pre-wrap break-words">
+                            {message.content}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-                {message.type === 'user' && (
-                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0 order-1">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
+                  ))
                 )}
               </div>
-            </div>
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
-              </div>
-              <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg">
-                <p className="text-gray-600">Thinking...</p>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-4 rounded-b-xl">
-        <div className="flex space-x-3">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask a question about your documents..."
-            className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            rows={2}
-            disabled={isLoading}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isLoading}
-            className="btn-primary self-end disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+              {messages.some(m => m.type === 'bot' && m.sources && m.sources.length > 0) && (
+                <div className="border-t border-slate-200/50 p-4">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-2">Sources</h3>
+                  <div className="space-y-2">
+                    {messages
+                      .filter(m => m.type === 'bot')
+                      .slice(-1)[0]?.sources?.map((source, index) => (
+                        <div key={index} className="text-xs text-slate-600 bg-slate-50 rounded p-2">
+                          <p className="font-medium">[{index + 1}] {source.title}</p>
+                          <p className="text-slate-500">
+                            {source.type === 'pdf' 
+                              ? `Page ${source.page}` 
+                              : `${source.timestamp}`
+                            }
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t border-slate-200/50 p-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask about your documents..."
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  />
+                  <button
+                    onClick={handleSend}
+                    disabled={isLoading || !input.trim()}
+                    className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? (
+                      <div className="w-5 h-5 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
-
-export default Chat
